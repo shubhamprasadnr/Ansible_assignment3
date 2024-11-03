@@ -1,0 +1,58 @@
+
+- name: Deploy spring application
+  hosts: web2
+  become: true
+  tasks:
+    - name: Update all packages to their latest version
+      ansible.builtin.apt:
+         update_cache: yes
+    - name: Install Mysql on Debian
+      ansible.builtin.apt:
+         name: mysql-server
+         state: present
+      when: ansible_os_family == "Debian"
+ 
+    - name: Install java 11 on Debian
+      ansible.builtin.apt:
+         name: openjdk-11-jdk
+         state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Maven
+      apt:
+         name: maven
+         state: present
+
+    - name: Download Apache Tomcat
+      get_url:
+         url: https://downloads.apache.org/tomcat/tomcat-9/v9.0.96/bin/apache-tomcat-9.0.96.tar.gz
+         dest: /tmp/apache-tomcat-9.0.96.tar.gz
+
+    - name: Extract Tomcat
+      unarchive:
+         src: /tmp/apache-tomcat-9.0.96.tar.gz
+         dest: /opt
+         remote_src: yes
+
+    - name: Clone the Spring3Hibernate repository
+      git:
+         repo: https://github.com/opstree/spring3hibernate.git
+         dest: /opt/spring3hibernate
+         version: master
+
+    - name: Create WAR file using Maven
+      command: mvn clean package
+      args:
+         chdir: /opt/spring3hibernate
+  
+
+    - name: Copy WAR file to Tomcat webapps directory
+      copy:
+         src: /opt/spring3hibernate/target/Spring3HibernateApp.war
+         dest: /opt/apache-tomcat-9.0.96/webapps/
+ 
+
+    - name: Restart Tomcat service
+      service:
+         name: apache-tomcat-9.0.96
+         state: restarted
