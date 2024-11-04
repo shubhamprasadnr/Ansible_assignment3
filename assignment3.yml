@@ -1,6 +1,6 @@
 
 - name: Deploy spring application
-  hosts: web2
+  hosts: web
   become: true
   tasks:
     - name: Update all packages to their latest version
@@ -50,9 +50,22 @@
       copy:
          src: /opt/spring3hibernate/target/Spring3HibernateApp.war
          dest: /opt/apache-tomcat-9.0.96/webapps/
- 
+         remote_src: yes
 
-    - name: Restart Tomcat service
-      service:
-         name: apache-tomcat-9.0.96
-         state: restarted
+
+    - name: Add roles and user to tomcat-users.xml
+      ansible.builtin.blockinfile:
+        path: /opt/apache-tomcat-9.0.96/conf/tomcat-users.xml
+        block: |
+          <role rolename="manager-gui"/>
+          <role rolename="manager-script"/>
+          <user username="tomcat" password="tomcat" roles="manager-gui,manager-script"/>
+        marker: "<!-- {mark} ANSIBLE MANAGED BLOCK -->"    
+
+    - name: Stop Tomcat
+      ansible.builtin.command: /opt/apache-tomcat-9.0.96/bin/shutdown.sh
+      ignore_errors: yes
+
+    - name: Start Tomcat
+      ansible.builtin.command: /opt/apache-tomcat-9.0.96/bin/startup.sh
+
