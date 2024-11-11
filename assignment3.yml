@@ -61,7 +61,13 @@
           <role rolename="manager-script"/>
           <user username="tomcat" password="tomcat" roles="manager-gui,manager-script"/>
         marker: "<!-- {mark} ANSIBLE MANAGED BLOCK -->"    
-
+        
+    - name: Remove RemoteAddrValve line from server.xml
+      ansible.builtin.lineinfile:
+        path: /path/to/your/server.xml  # Replace with the actual file path
+        state: absent
+        regexp: '<Valve className="org.apache.catalina.valves.RemoteAddrValve"\s*allow="127\\.\d+\\.\d+\\.\d+\|::1\|0:0:0:0:0:0:0:1" />'
+        
     - name: Stop Tomcat
       ansible.builtin.command: /opt/apache-tomcat-9.0.96/bin/shutdown.sh
       ignore_errors: yes
